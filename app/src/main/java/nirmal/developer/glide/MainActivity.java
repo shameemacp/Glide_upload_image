@@ -160,6 +160,10 @@ showprofilepic();
                         Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
 //Intent iso= new Intent(getApplicationContext(),HOME_page.class);
 //startActivity(iso);
+                        if(response.equals("[]"))
+                        {
+                            Toast.makeText(MainActivity.this,"set profilepic ",Toast.LENGTH_LONG).show();
+                        }
                         try {
                             JSONArray jsonArray=new JSONArray(response);
                             for(int i=0;i<jsonArray.length();i++){
