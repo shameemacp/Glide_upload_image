@@ -11,28 +11,32 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.squareup.picasso.Picasso;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String UPLOAD_URL = "https://appealable-merchant.000webhostapp.com/Glide.php";
     public static final String UPLOAD_KEY = "image";
 
-
+Intent in;
 
     private int PICK_IMAGE_REQUEST = 1;
 
@@ -46,24 +50,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Bitmap bitmap;
 
     private Uri filePath;
-
+String n;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         imageView=findViewById(R.id.imageView);
-//        Glide.with(this).load("http://goo.gl/gEgYUd").into(imageView);
-//        Picasso.get().load("http://goo.gl/gEgYUd").into(imageView);
-
         buttonChoose =findViewById(R.id.buttonChoose);
         buttonUpload =findViewById(R.id.buttonUpload);
-
         imageView =findViewById(R.id.imageView);
-
         buttonChoose.setOnClickListener(this);
         buttonUpload.setOnClickListener(this);
-
+in=getIntent();
+n=in.getStringExtra("uname");
+showprofilepic();
     }
 
     private void showFileChooser() {
@@ -114,54 +115,89 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 super.onPostExecute(s);
                 loading.dismiss();
                 Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
-                try {
-                    JSONArray jsonArray=new JSONArray(s);
-                    for(int i=0;i<jsonArray.length();i++){
-                        JSONObject json_obj = jsonArray.getJSONObject(i);
-                        String img=json_obj.getString("image");
-                        Picasso.get().load(img).into(imageView);
 
-                        }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
             }
 
             @Override
-            protected String doInBackground(Bitmap... params) {
+            protected String doInBackground(Bitmap... params)
+            {
                 Bitmap bitmap = params[0];
                 String uploadImage = getStringImage(bitmap);
 
                 HashMap<String,String> data = new HashMap<>();
 
                 data.put(UPLOAD_KEY, uploadImage);
+                data.put("u",n);
+                data.put("status","1");
                 String result = rh.sendPostRequest(UPLOAD_URL,data);
 
                 return result;
             }
         }
-
         UploadImage ui = new UploadImage();
         ui.execute(bitmap);
     }
-
     @Override
-    public void onClick(View v) {
-        if (v == buttonChoose) {
+    public void onClick(View v)
+    {
+        if (v == buttonChoose)
+        {
             showFileChooser();
         }
-
-        if(v == buttonUpload){
+        if(v == buttonUpload)
+        {
             uploadImage();
         }
+    }
+    public  void showprofilepic()
+    {
+        StringRequest stringRequest = new StringRequest(Request.Method.POST,UPLOAD_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+//If we are getting success from server
 
+                        Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+//Intent iso= new Intent(getApplicationContext(),HOME_page.class);
+//startActivity(iso);
+                        try {
+                            JSONArray jsonArray=new JSONArray(response);
+                            for(int i=0;i<jsonArray.length();i++){
+                                JSONObject json_obj = jsonArray.getJSONObject(i);
+                                String im=json_obj.getString("image");
+                                Picasso.get().load(im).into(imageView);
+
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+//You can handle error here if you want
+                    }
+
+                }){
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String,String> params = new HashMap<>();
+//Adding parameters to request
+
+
+                params.put("u",n);
+                params.put("status","2");
+
+//returning parameter
+                return params;
+            }
+        };
+//Adding the string request to the queue
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+        requestQueue.add(stringRequest);
 
     }
-
-
-
-
-
-    }
+}
 
